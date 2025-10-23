@@ -1,151 +1,132 @@
-import pygame
-import random
-import math
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simple 2D Car</title>
+<style>
+  body {
+    background: linear-gradient(to top, #87CEEB 60%, #d6f0ff 100%);
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
 
-# Initialize Pygame
-pygame.init()
+  .road {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 150px;
+    background: #2e2e2e;
+    border-top: 8px solid #555;
+  }
 
-# Screen dimensions
-screen_width = 800
-screen_height = 600
-screen = pygame.display.set_mode((screen_width, screen_height))
+  .car {
+    position: relative;
+    width: 250px;
+    height: 100px;
+    background: #e63946;
+    border-radius: 25px 25px 10px 10px;
+    box-shadow: 0 8px 0 #b92b36;
+  }
 
-# Title and Icon
-pygame.display.set_caption("Space Invaders")
-icon = pygame.image.load('ufo.png')  # Make sure you have a 'ufo.png' file or remove this
-pygame.display.set_icon(icon)
+  /* Windows */
+  .window {
+    position: absolute;
+    top: 15px;
+    width: 90px;
+    height: 40px;
+    background: #bde0fe;
+    border-radius: 10px;
+    border: 3px solid #333;
+  }
+  .window.left {
+    left: 25px;
+  }
+  .window.right {
+    right: 25px;
+  }
 
-# Player
-player_img = pygame.image.load('player.png')  # Make sure you have a 'player.png' file
-player_x = 370
-player_y = 480
-player_x_change = 0
-player_speed = 5
+  /* Wheels */
+  .wheel {
+    position: absolute;
+    bottom: -20px;
+    width: 55px;
+    height: 55px;
+    background: #111;
+    border-radius: 50%;
+    border: 6px solid #555;
+  }
+  .wheel.left {
+    left: 30px;
+  }
+  .wheel.right {
+    right: 30px;
+  }
 
-# Enemy
-enemy_img = []
-enemy_x = []
-enemy_y = []
-enemy_x_change = []
-enemy_y_change = []
-num_of_enemies = 6
+  .wheel::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 15px;
+    height: 15px;
+    background: #999;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+  }
 
-for i in range(num_of_enemies):
-    enemy_img.append(pygame.image.load('enemy.png'))  # Make sure you have an 'enemy.png' file
-    enemy_x.append(random.randint(0, 736))
-    enemy_y.append(random.randint(50, 150))
-    enemy_x_change.append(4)
-    enemy_y_change.append(40)
+  /* Headlight */
+  .headlight {
+    position: absolute;
+    top: 35px;
+    right: -15px;
+    width: 15px;
+    height: 15px;
+    background: #fff176;
+    border-radius: 50%;
+    box-shadow: 0 0 15px 5px #fff176;
+  }
 
-# Bullet
-bullet_img = pygame.image.load('bullet.png')  # Make sure you have a 'bullet.png' file
-bullet_x = 0
-bullet_y = 480
-bullet_y_change = 10
-bullet_state = "ready"  # "ready" means bullet is not visible, "fire" means it is moving
+  /* Taillight */
+  .taillight {
+    position: absolute;
+    top: 35px;
+    left: -10px;
+    width: 10px;
+    height: 15px;
+    background: #ff0000;
+    border-radius: 2px;
+    box-shadow: 0 0 8px 2px #ff0000;
+  }
 
-# Score
-score_value = 0
-font = pygame.font.Font('freesansbold.ttf', 32)
-text_x = 10
-text_y = 10
+  /* Car reflection (adds a bit of realism) */
+  .car::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 20%;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 25px 25px 10px 10px;
+  }
+</style>
+</head>
+<body>
 
-# Game Over text
-over_font = pygame.font.Font('freesansbold.ttf', 64)
+<div class="car">
+  <div class="window left"></div>
+  <div class="window right"></div>
+  <div class="wheel left"></div>
+  <div class="wheel right"></div>
+  <div class="headlight"></div>
+  <div class="taillight"></div>
+</div>
 
-def show_score(x, y):
-    score = font.render("Score : " + str(score_value), True, (255, 255, 255))
-    screen.blit(score, (x, y))
+<div class="road"></div>
 
-def game_over_text():
-    over_text = over_font.render("GAME OVER", True, (255, 0, 0))
-    screen.blit(over_text, (200, 250))
-
-def player(x, y):
-    screen.blit(player_img, (x, y))
-
-def enemy(x, y, i):
-    screen.blit(enemy_img[i], (x, y))
-
-def fire_bullet(x, y):
-    global bullet_state
-    bullet_state = "fire"
-    screen.blit(bullet_img, (x + 16, y + 10))
-
-def is_collision(enemy_x, enemy_y, bullet_x, bullet_y):
-    distance = math.sqrt((math.pow(enemy_x - bullet_x, 2)) + (math.pow(enemy_y - bullet_y, 2)))
-    return distance < 27
-
-# Game Loop
-running = True
-while running:
-
-    screen.fill((0, 0, 0))  # RGB for black background
-
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-
-        # Key controls
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_LEFT:
-                player_x_change = -player_speed
-            if event.key == pygame.K_RIGHT:
-                player_x_change = player_speed
-            if event.key == pygame.K_SPACE:
-                if bullet_state == "ready":
-                    bullet_x = player_x
-                    fire_bullet(bullet_x, bullet_y)
-
-        if event.type == pygame.KEYUP:
-            if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
-                player_x_change = 0
-
-    # Player Movement
-    player_x += player_x_change
-    if player_x <= 0:
-        player_x = 0
-    elif player_x >= 736:
-        player_x = 736
-
-    # Enemy Movement
-    for i in range(num_of_enemies):
-
-        # Game Over
-        if enemy_y[i] > 440:
-            for j in range(num_of_enemies):
-                enemy_y[j] = 2000  # Move enemies off screen
-            game_over_text()
-            break
-
-        enemy_x[i] += enemy_x_change[i]
-        if enemy_x[i] <= 0:
-            enemy_x_change[i] = 4
-            enemy_y[i] += enemy_y_change[i]
-        elif enemy_x[i] >= 736:
-            enemy_x_change[i] = -4
-            enemy_y[i] += enemy_y_change[i]
-
-        # Collision
-        collision = is_collision(enemy_x[i], enemy_y[i], bullet_x, bullet_y)
-        if collision:
-            bullet_y = 480
-            bullet_state = "ready"
-            score_value += 1
-            enemy_x[i] = random.randint(0, 736)
-            enemy_y[i] = random.randint(50, 150)
-
-        enemy(enemy_x[i], enemy_y[i], i)
-
-    # Bullet Movement
-    if bullet_state == "fire":
-        fire_bullet(bullet_x, bullet_y)
-        bullet_y -= bullet_y_change
-    if bullet_y <= 0:
-        bullet_y = 480
-        bullet_state = "ready"
-
-    player(player_x, player_y)
-    show_score(text_x, text_y)
-    pygame.display.update()
-
+</body>
+</html>
